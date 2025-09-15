@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Civic Connect - Public Issue Reporter</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script> <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5;
+        }
+        .tricolor-gradient-bg {
+            background: linear-gradient(135deg, #FF9933, #FFFFFF, #138808);
+        }
+        .btn-saffron { background-color: #FF9933; color: white; }
+        .btn-green { background-color: #138808; color: white; }
+        .border-saffron { border-color: #FF9933; }
+        .border-green { border-color: #138808; }
+        .text-saffron { color: #FF9933; }
+        .text-green { color: #138808; }
+        .tab-active {
+            border-bottom: 3px solid #138808;
+            color: #138808;
+            font-weight: 600;
+        }
+        /* Hide scrollbar for Chrome, Safari and Opera */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        /* Hide scrollbar for IE, Edge and Firefox */
+        .no-scrollbar {
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
+        }
+        .modal-backdrop {
+            background-color: rgba(0,0,0,0.5);
+        }
+    </style>
+</head>
+<body>
+
+    <div id="loading-spinner" class="fixed inset-0 bg-white/80 z-50 flex items-center justify-center">
+        <div class="animate-spin rounded-full h-32 w-32 border-t-4 border-b-4 border-green-600"></div>
+    </div>
+
+    <div id="app-container" class="max-w-7xl mx-auto">
+
+        <div id="login-view">
+            <div class="min-h-screen flex items-center justify-center tricolor-gradient-bg p-4">
+                <div class="w-full max-w-md bg-white rounded-2xl shadow-2xl p-8 space-y-6">
+                    <div class="text-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-green-600" viewBox="0 0 20 20" fill="currentColor">
+                          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clip-rule="evenodd" />
+                        </svg>
+                        <h1 class="text-3xl font-bold text-gray-800 mt-2">Civic Connect</h1>
+                        <p class="text-gray-500">Your Voice for a Better Community</p>
+                    </div>
+
+                    <div id="auth-form-container">
+                        </div>
+
+                    <div class="my-4 text-center text-sm text-gray-500">
+                        <p class="mb-2">Or preview the platform (no login needed):</p>
+                        <div class="flex space-x-4">
+                            <button id="preview-civilian" class="w-full text-center py-2 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">Preview Civilian</button>
+                            <button id="preview-official" class="w-full text-center py-2 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-gray-600 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500">Preview Official</button>
+                        </div>
+                    </div>
+
+                    <div class="text-center text-gray-600">
+                        <p id="auth-toggle-text">Don't have an account? <a href="#" id="auth-toggle-link" class="font-medium text-green-600 hover:text-green-500">Sign Up</a></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="civilian-dashboard-view" class="hidden">
+            <header class="bg-white shadow-md sticky top-0 z-40">
+                <nav class="container mx-auto px-6 py-3 flex justify-between items-center">
+                    <div class="flex items-center space-x-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-green-600" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clip-rule="evenodd" /></svg>
+                        <h1 class="text-2xl font-bold text-gray-800">Civic Connect</h1>
+                    </div>
+                    <div>
+                        <button id="logout-btn-civilian" class="text-gray-600 hover:text-green-600">Logout</button>
+                    </div>
+                </nav>
+            </header>
+
+            <main class="container mx-auto p-4 md:p-6">
+                <div class="mb-6 border-b border-gray-200">
+                    <nav class="flex space-x-8" aria-label="Tabs">
+                        <a href="#" id="tab-dashboard" class="civilian-tab tab-active px-1 pb-4 text-sm font-medium">Dashboard</a>
+                        <a href="#" id="tab-my-reports" class="civilian-tab text-gray-500 hover:text-gray-700 px-1 pb-4 text-sm font-medium">My Reports</a>
+                        <a href="#" id="tab-profile" class="civilian-tab text-gray-500 hover:text-gray-700 px-1 pb-4 text-sm font-medium">Profile</a>
+                    </nav>
+                </div>
+
+                <div id="civilian-content-dashboard">
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <div class="lg:col-span-2">
+                            <div class="flex justify-between items-center mb-4">
+                               <h2 class="text-2xl font-bold text-gray-800">Community Reports</h2>
+                               <button id="new-report-btn" class="btn-green font-bold py-2 px-4 rounded-lg shadow-md hover:bg-green-700 transition duration-300 flex items-center space-x-2">
+                                   <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" /></svg>
+                                   <span>New Report</span>
+                               </button>
+                            </div>
+                            <div id="reports-feed" class="space-y-4">
+                                <p class="text-center text-gray-500 py-10">No reports found. Be the first to raise an issue!</p>
+                            </div>
+                        </div>
+                        <div class="lg:col-span-1 space-y-6">
+                             <div class="bg-white p-6 rounded-2xl shadow-lg">
+                                <h3 class="text-xl font-bold text-gray-800 mb-4">Notice Board</h3>
+                                <div id="notice-board" class="space-y-3 text-gray-600">
+                                    <p class="text-sm">No new notices from officials.</p>
+                                    </div>
+                            </div>
+                            <div class="bg-white p-6 rounded-2xl shadow-lg">
+                                <h3 class="text-xl font-bold text-gray-800 mb-4">Report Hotspots</h3>
+                                <img src="https://placehold.co/600x400/E2E8F0/4A5568?text=Map+View+Coming+Soon" class="rounded-lg" alt="Map of report hotspots">
+                                <p class="text-sm text-gray-500 mt-2">A map view showing areas with high report concentration will be available soon.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div id="civilian-content-my-reports" class="hidden">
+                     <h2 class="text-2xl font-bold text-gray-800 mb-4">My Submitted Reports</h2>
+                     <div id="my-reports-list" class="space-y-4">
+                        <p class="text-center text-gray-500 py-10">You haven't submitted any reports yet.</p>
+                     </div>
+                </div>
+                <div id="civilian-content-profile" class="hidden">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-4">My Profile</h2>
+                    <div class="bg-white p-8 rounded-2xl shadow-lg max-w-lg mx-auto">
+                        <div class="flex flex-col items-center space-y-4">
+                             <div class="w-24 h-24 bg-gray-200 rounded-full flex items-center justify-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-500" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" /></svg>
+                             </div>
+                             <p class="text-lg font-semibold" id="profile-email">guest.user@example.com</p>
+                             <div class="text-center">
+                                <p class="font-bold text-2xl text-green-600" id="profile-impact-score">15</p>
+                                <p class="text-gray-500">Community Impact Score</p>
+                             </div>
+                             <p class="text-sm text-gray-500 text-center">Your user ID is: <code id="profile-user-id" class="bg-gray-100 p-1 rounded">guest-preview-user</code></p>
+                        </div>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+
+        <div id="official-dashboard-view" class="hidden">
+             <header class="bg-white shadow-md sticky top-0 z-40">
+                <nav class="container mx-auto px-6 py-3 flex justify-between items-center">
+                    <div class="flex items-center space-x-2">
+                         <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-saffron" viewBox="0 0 20 20" fill="currentColor"><path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0115 15v3h1zM4.75 12.094A5.973 5.973 0 004 15v3H3v-3a3.005 3.005 0 011.25-2.406z" /></svg>
+                        <h1 class="text-2xl font-bold text-gray-800">Official Dashboard</h1>
+                    </div>
+                    <div>
+                        <button id="logout-btn-official" class="text-gray-600 hover:text-green-600">Logout</button>
+                    </div>
+                </nav>
+            </header>
+             <main class="container mx-auto p-4 md:p-6">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+                   <h2 class="text-2xl font-bold text-gray-800 mb-4 md:mb-0">Pending Civic Reports</h2>
+                   <div class="flex items-center space-x-4">
+                        <select id="region-filter" class="form-select appearance-none block w-full md:w-48 px-3 py-2 text-base font-normal text-gray-700 bg-white bg-clip-padding bg-no-repeat border border-solid border-gray-300 rounded-lg transition ease-in-out m-0 focus:text-gray-700 focus:bg-white focus:border-green-600 focus:outline-none">
+                            <option value="all">All Regions</option>
+                            <option value="North Zone">North Zone</option>
+                            <option value="South Zone">South Zone</option>
+                            <option value="East Zone">East Zone</option>
+                            <option value="West Zone">West Zone</option>
+                        </select>
+                         <button id="post-notice-btn" class="btn-saffron font-bold py-2 px-4 rounded-lg shadow-md hover:bg-orange-500 transition duration-300">Post Notice</button>
+                   </div>
+                </div>
+                <div id="official-reports-list" class="space-y-4">
+                     <p class="text-center text-gray-500 py-10">No pending reports at the moment. Great job!</p>
+                    </div>
+             </main>
+        </div>
+
+    </div>
+
+    <div id="modal-container">
+        <div id="new-report-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 modal-backdrop">
+            <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg p-6 space-y-4 transform transition-all">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-2xl font-bold text-gray-800">Submit a New Report</h2>
+                    <button id="close-report-modal" class="text-gray-400 hover:text-gray-600">&times;</button>
+                </div>
+                <form id="new-report-form" class="space-y-4">
+                    <div>
+                        <label for="street-name" class="block text-sm font-medium text-gray-700">Street Name / Area</label>
+                        <input type="text" id="street-name" name="street-name" required class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-green-500 focus:border-green-500">
+                    </div>
+                     <div>
+                        <label for="description" class="block text-sm font-medium text-gray-700">Problem Description</label>
+                        <textarea id="description" name="description" rows="3" required class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-green-500 focus:border-green-500"></textarea>
+                    </div>
+                    <div>
+                        <label for="image-url" class="block text-sm font-medium text-gray-700">Photo URL <span class="text-gray-400">(Optional)</span></label>
+                        <input type="url" id="image-url" name="image-url" placeholder="https://example.com/image.jpg" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-green-500 focus:border-green-500">
+                    </div>
+                    <div>
+                        <label for="audio-url" class="block text-sm font-medium text-gray-700">Audio URL <span class="text-gray-400">(Optional)</span></label>
+                        <input type="url" id="audio-url" name="audio-url" placeholder="https://example.com/audio.mp3" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-green-500 focus:border-green-500">
+                    </div>
+                    <div>
+                        <label for="video-url" class="block text-sm font-medium text-gray-700">Video URL <span class="text-gray-400">(Optional)</span></label>
+                        <input type="url" id="video-url" name="video-url" placeholder="https://example.com/video.mp4" class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-green-500 focus:border-green-500">
+                    </div>
+                    <p class="text-xs text-gray-500">Please provide at least one media URL (Photo, Audio, or Video).</p>
+                    <div class="text-right">
+                        <button type="submit" class="w-full btn-green font-bold py-2 px-4 rounded-lg shadow-md hover:bg-green-700 transition duration-300">Submit Report</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <div id="resolve-report-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 modal-backdrop">
+            <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg p-6 space-y-4 transform transition-all">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-2xl font-bold text-gray-800">Resolve Report</h2>
+                    <button id="close-resolve-modal" class="text-gray-400 hover:text-gray-600">&times;</button>
+                </div>
+                <form id="resolve-report-form" class="space-y-4">
+                    <input type="hidden" id="resolve-report-id">
+                    <div>
+                        <label for="resolve-explanation" class="block text-sm font-medium text-gray-700">Explanation of Reforms</label>
+                        <textarea id="resolve-explanation" name="resolve-explanation" rows="3" required class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-green-500 focus:border-green-500"></textarea>
+                    </div>
+                    <div>
+                        <label for="resolve-image-url" class="block text-sm font-medium text-gray-700">Photo URL of Resolved Issue</label>
+                        <input type="url" id="resolve-image-url" name="resolve-image-url" placeholder="https://example.com/resolved.jpg" required class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-green-500 focus:border-green-500">
+                    </div>
+                    <div class="text-right">
+                        <button type="submit" class="w-full btn-green font-bold py-2 px-4 rounded-lg shadow-md hover:bg-green-700 transition duration-300">Mark as Resolved</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div id="post-notice-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 modal-backdrop">
+            <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg p-6 space-y-4 transform transition-all">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-2xl font-bold text-gray-800">Post a New Notice</h2>
+                    <button id="close-notice-modal" class="text-gray-400 hover:text-gray-600">&times;</button>
+                </div>
+                <form id="post-notice-form" class="space-y-4">
+                    <div>
+                        <label for="notice-title" class="block text-sm font-medium text-gray-700">Title</label>
+                        <input type="text" id="notice-title" required class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-saffron-500 focus:border-saffron-500">
+                    </div>
+                     <div>
+                        <label for="notice-content" class="block text-sm font-medium text-gray-700">Content</label>
+                        <textarea id="notice-content" rows="4" required class="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-saffron-500 focus:border-saffron-500"></textarea>
+                    </div>
+                    <div class="text-right">
+                        <button type="submit" class="w-full btn-saffron font-bold py-2 px-4 rounded-lg shadow-md hover:bg-orange-500 transition duration-300">Post to Notice Board</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <div id="custom-alert-modal" class="fixed inset-0 z-50 hidden items-center justify-center p-4 modal-backdrop">
+            <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 text-center space-y-4 transform transition-all">
+                 <p id="custom-alert-message" class="text-gray-700"></p>
+                 <button id="custom-alert-close" class="btn-green font-bold py-2 px-6 rounded-lg">OK</button>
+            </div>
+        </div>
+    </div>
+
+
+    <script type="module">
+        // Firebase Imports
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { 
+            getAuth, 
+            createUserWithEmailAndPassword, 
+            signInWithEmailAndPassword, 
+            signOut, 
+            onAuthStateChanged,
+            signInAnonymously,
+            signInWithCustomToken
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { 
+            getFirestore, 
+            collection, 
+            addDoc, 
+            doc, 
+            setDoc, 
+            getDoc, 
+            query, 
+            where, 
+            getDocs,
+            onSnapshot,
+            serverTimestamp,
+            updateDoc,
+            arrayUnion
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- Firebase Config (Provided by Environment) ---
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-civic-connect';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : { apiKey: "DEMO_KEY", authDomain: "DEMO_DOMAIN", projectId: "DEMO_PROJECT_ID" };
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        // --- Firebase Initialization ---
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // --- DOM Elements ---
+        const loadingSpinner = document.getElementById('loading-spinner');
+        const loginView = document.getElementById('login-view');
+        const civilianDashboardView = document.getElementById('civilian-dashboard-view');
+        const officialDashboardView = document.getElementById('official-dashboard-view');
+        const authFormContainer = document.getElementById('auth-form-container');
+        const authToggleLink = document.getElementById('auth-toggle-link');
+        const authToggleText = document.getElementById('auth-toggle-text');
+
+        // Modals
+        const newReportModal = document.getElementById('new-report-modal');
+        const resolveReportModal = document.getElementById('resolve-report-modal');
+        const postNoticeModal = document.getElementById('post-notice-modal');
+        const customAlertModal = document.getElementById('custom-alert-modal');
+        const customAlertMessage = document.getElementById('custom-alert-message');
+
+        // Civilian View Elements
+        const civilianTabs = document.querySelectorAll('.civilian-tab');
+        const civilianContentDashboard = document.getElementById('civilian-content-dashboard');
+        const civilianContentMyReports = document.getElementById('civilian-content-my-reports');
+        const civilianContentProfile = document.getElementById('civilian-content-profile');
+        const reportsFeed = document.getElementById('reports-feed');
+        const myReportsList = document.getElementById('my-reports-list');
+        const profileEmail = document.getElementById('profile-email');
+        const profileUserId = document.getElementById('profile-user-id');
+        const profileImpactScore = document.getElementById('profile-impact-score');
+        const noticeBoard = document.getElementById('notice-board');
+
+        // Official View Elements
+        const officialReportsList = document.getElementById('official-reports-list');
+
+        // --- App State ---
+        let currentUser = null;
+        let currentUserRole = null;
+        let isLogin = true;
+
+        // --- Utility Functions ---
+        const showView = (view) => {
+            loginView.classList.add('hidden');
+            civilianDashboardView.classList.add('hidden');
+            officialDashboardView.classList.add('hidden');
+            view.classList.remove('hidden');
+        };
+        
+        const showModal = (modal) => modal.style.display = 'flex';
+        const hideModal = (modal) => modal.style.display = 'none';
+        
+        const showAlert = (message) => {
+            customAlertMessage.textContent = message;
+            showModal(customAlertModal);
+        };
+
+        const timeAgo = (date) => {
+            if (!(date instanceof Date)) {
+                return 'a while ago'; // fallback for invalid date
+            }
+            const seconds = Math.floor((new Date() - date) / 1000);
+            let interval = seconds / 31536000;
+            if (interval > 1) return Math.floor(interval) + " years ago";
+            interval = seconds / 2592000;
+            if (interval > 1) return Math.floor(interval) + " months ago";
+            interval = seconds / 86400;
+            if (interval > 1) return Math.floor(interval) + " days ago";
+            interval = seconds / 3600;
+            if (interval > 1) return Math.floor(interval) + " hours ago";
+            interval = seconds / 60;
+            if (interval > 1) return Math.floor(interval) + " minutes ago";
+            return Math.floor(seconds) + " seconds ago";
+        };
+
+
+        // --- Authentication ---
+        const renderAuthForm = () => {
+            authFormContainer.innerHTML = `
+                <form id="auth-form" class="space-y-4">
+                    <div>
+                        <label for="email" class="sr-only">Email address</label>
+                        <input id="email" name="email" type="email" autocomplete="email" required class="appearance-none rounded-lg relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-green-500 focus:border-green-500 focus:z-10 sm:text-sm" placeholder="Email address">
+                    </div>
+                    <div>
+                        <label for="password" class="sr-only">Password</label>
+                        <input id="password" name="password" type="password" autocomplete="current-password" required class="appearance-none rounded-lg relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-green-500 focus:border-green-500 focus:z-10 sm:text-sm" placeholder="Password">
+                    </div>
+                     ${!isLogin ? `
+                    <div>
+                        <label for="confirm-password" class="sr-only">Confirm Password</label>
+                        <input id="confirm-password" name="confirm-password" type="password" required class="appearance-none rounded-lg relative block w-full px-3 py-3 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-green-500 focus:border-green-500 focus:z-10 sm:text-sm" placeholder="Confirm Password">
+                    </div>` : ''}
+
+                    <div class="flex items-center justify-between">
+                      <label for="role" class="text-sm font-medium text-gray-700">I am a:</label>
+                      <div class="flex items-center space-x-4">
+                        <div class="flex items-center">
+                          <input id="role-civilian" name="role" type="radio" value="civilian" checked class="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300">
+                          <label for="role-civilian" class="ml-2 block text-sm text-gray-900">Civilian</label>
+                        </div>
+                        <div class="flex items-center">
+                          <input id="role-official" name="role" type="radio" value="official" class="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300">
+                          <label for="role-official" class="ml-2 block text-sm text-gray-900">Official</label>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                        <button type="submit" class="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                            ${isLogin ? 'Sign In' : 'Sign Up'}
+                        </button>
+                    </div>
+                </form>
+            `;
+            document.getElementById('auth-form').addEventListener('submit', handleAuth);
+        };
+
+        const toggleAuthMode = () => {
+            isLogin = !isLogin;
+            if (isLogin) {
+                authToggleText.innerHTML = `Don't have an account? <a href="#" id="auth-toggle-link" class="font-medium text-green-600 hover:text-green-500">Sign Up</a>`;
+            } else {
+                authToggleText.innerHTML = `Already have an account? <a href="#" id="auth-toggle-link" class="font-medium text-green-600 hover:text-green-500">Sign In</a>`;
+            }
+            renderAuthForm();
+            document.getElementById('auth-toggle-link').addEventListener('click', (e) => {
+              e.preventDefault();
+              toggleAuthMode();
+            });
+        };
+
+        const handleAuth = async (e) => {
+            e.preventDefault();
+            loadingSpinner.style.display = 'flex';
+            const email = e.target.email.value;
+            const password = e.target.password.value;
+            const role = e.target.role.value;
+
+            try {
+                if (isLogin) {
+                    await signInWithEmailAndPassword(auth, email, password);
+                } else {
+                    const confirmPassword = e.target['confirm-password'].value;
+                    if (password !== confirmPassword) {
+                        showAlert('Passwords do not match.');
+                        return;
+                    }
+                    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                    // Create user profile in Firestore
+                    const userRef = doc(db, `artifacts/${appId}/users`, userCredential.user.uid);
+                    await setDoc(userRef, {
+                        email: userCredential.user.email,
+                        role: role,
+                        createdAt: serverTimestamp(),
+                        impactScore: 0
+                    });
+                }
+            } catch (error) {
+                console.error("Auth Error:", error);
+                showAlert(error.message);
+            } finally {
+                loadingSpinner.style.display = 'none';
+            }
+        };
+
+        const handleLogout = async () => {
+            // In preview mode, just go back to the login screen
+            if (document.body.dataset.mode === 'preview') {
+                showView(loginView);
+                return;
+            }
+            await signOut(auth);
+            currentUser = null;
+            currentUserRole = null;
+            // Clear all dynamic content
+            reportsFeed.innerHTML = '';
+            myReportsList.innerHTML = '';
+            officialReportsList.innerHTML = '';
+            noticeBoard.innerHTML = '';
+            showView(loginView);
+        };
+        
+        // --- Civilian Dashboard ---
+        const getStatusBadge = (status) => {
+            switch(status) {
+                case 'pending': return `<span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">Pending</span>`;
+                case 'in-progress': return `<span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">In Progress</span>`;
+                case 'resolved': return `<span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">Resolved</span>`;
+                default: return '';
+            }
+        };
+
+        const createReportCardHTML = (report, isOfficialView = false) => {
+            const reportCount = report.reporters ? report.reporters.length : 1;
+            const priorityClass = reportCount > 5 ? 'border-l-8 border-red-500' : (reportCount > 2 ? 'border-l-8 border-yellow-500' : 'border-l-8 border-gray-300');
+            const createdAtDate = report.createdAt instanceof Date ? report.createdAt : (report.createdAt?.toDate ? report.createdAt.toDate() : new Date());
+            const resolvedAtDate = report.resolvedAt instanceof Date ? report.resolvedAt : (report.resolvedAt?.toDate ? report.resolvedAt.toDate() : null);
+
+            let mediaHTML = '';
+            if (report.allImages && report.allImages[0]) {
+                mediaHTML += `<img src="${report.allImages[0]}" onerror="this.src='https://placehold.co/400x300/e2e8f0/666?text=Image'" alt="Issue Image" class="w-full h-40 object-cover rounded-lg">`;
+            }
+            if (report.allAudioUrls && report.allAudioUrls[0]) {
+                mediaHTML += `<div class="mt-2"><audio controls class="w-full"><source src="${report.allAudioUrls[0]}" type="audio/mpeg">Your browser does not support the audio element.</audio></div>`;
+            }
+            if (report.allVideoUrls && report.allVideoUrls[0]) {
+                 mediaHTML += `<div class="mt-2"><video controls class="w-full h-40 rounded-lg bg-black"><source src="${report.allVideoUrls[0]}" type="video/mp4">Your browser does not support the video tag.</video></div>`;
+            }
+
+            return `
+             <div class="bg-white rounded-2xl shadow-lg overflow-hidden ${priorityClass}">
+                <div class="p-6">
+                    <div class="flex flex-col sm:flex-row justify-between sm:items-center mb-4">
+                       <h3 class="text-xl font-bold text-gray-800">${report.streetName}</h3>
+                       ${getStatusBadge(report.status)}
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="md:col-span-1">
+                            ${mediaHTML || '<div class="w-full h-40 bg-gray-200 rounded-lg flex items-center justify-center text-gray-500">No Media</div>'}
+                        </div>
+                        <div class="md:col-span-2">
+                             <p class="text-gray-600 mb-2">${report.allDescriptions[0]}</p>
+                             <div class="text-sm text-gray-500 space-y-1">
+                                <p><strong>Reported by:</strong> ${report.reporters.length} civilian(s)</p>
+                                <p><strong>First Reported:</strong> ${timeAgo(createdAtDate)}</p>
+                                ${report.resolvedAt ? `<p><strong>Resolved:</strong> ${timeAgo(resolvedAtDate)}</p>` : ''}
+                             </div>
+                        </div>
+                    </div>
+                    
+                    ${report.status === 'resolved' && report.resolution ? `
+                    <div class="mt-4 pt-4 border-t border-gray-200">
+                        <h4 class="font-semibold text-green-700">Resolution Details</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
+                            <div class="md:col-span-1">
+                                <img src="${report.resolution.imageUrl}" onerror="this.src='https://placehold.co/400x300/a7f3d0/166534?text=Resolved'" alt="Resolved Image" class="w-full h-40 object-cover rounded-lg">
+                            </div>
+                            <div class="md:col-span-2">
+                                <p class="text-gray-600 text-sm">${report.resolution.explanation}</p>
+                            </div>
+                        </div>
+                    </div>
+                    ` : ''}
+                    
+                    ${isOfficialView && report.status === 'pending' ? `
+                    <div class="mt-4 text-right">
+                        <button class="resolve-btn btn-green font-bold py-2 px-4 rounded-lg shadow-md" data-id="${report.id}" onclick="alert('This is a preview. Resolving is disabled.')">Resolve Issue</button>
+                    </div>
+                    ` : ''}
+                </div>
+             </div>
+            `;
+        };
+        
+        const fetchAndDisplayReports = () => {
+             const reportsRef = collection(db, `artifacts/${appId}/public/data/reports`);
+             onSnapshot(reportsRef, (snapshot) => {
+                if(snapshot.empty) {
+                     reportsFeed.innerHTML = `<p class="text-center text-gray-500 py-10">No reports found. Be the first to raise an issue!</p>`;
+                     return;
+                }
+                let reportsHtml = '';
+                const allReports = snapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
+                allReports.sort((a,b) => (b.reporters?.length || 0) - (a.reporters?.length || 0)); // Sort by priority
+                allReports.forEach(report => {
+                    reportsHtml += createReportCardHTML(report);
+                });
+                reportsFeed.innerHTML = reportsHtml;
+             });
+        };
+
+        const fetchMyReports = (userId) => {
+            const reportsRef = collection(db, `artifacts/${appId}/public/data/reports`);
+            const q = query(reportsRef, where("reporters", "array-contains", userId));
+            
+            onSnapshot(q, (snapshot) => {
+                if(snapshot.empty) {
+                     myReportsList.innerHTML = `<p class="text-center text-gray-500 py-10">You haven't submitted any reports yet.</p>`;
+                     return;
+                }
+                let reportsHtml = '';
+                snapshot.forEach(doc => {
+                    reportsHtml += createReportCardHTML({id: doc.id, ...doc.data()});
+                });
+                myReportsList.innerHTML = reportsHtml;
+            });
+        };
+
+        const handleNewReport = async (e) => {
+            e.preventDefault();
+            if (document.body.dataset.mode === 'preview') {
+                showAlert("This is a preview. Submitting new reports is disabled.");
+                return;
+            }
+            
+            const streetName = e.target['street-name'].value.trim();
+            const description = e.target.description.value.trim();
+            const imageUrl = e.target['image-url'].value.trim();
+            const audioUrl = e.target['audio-url'].value.trim();
+            const videoUrl = e.target['video-url'].value.trim();
+
+            if (!imageUrl && !audioUrl && !videoUrl) {
+                showAlert('Please provide at least one media URL (Photo, Audio, or Video).');
+                return;
+            }
+
+            loadingSpinner.style.display = 'flex';
+
+            try {
+                // Check if a report for this street already exists and is pending
+                const reportsRef = collection(db, `artifacts/${appId}/public/data/reports`);
+                const q = query(reportsRef, where("streetName", "==", streetName), where("status", "==", "pending"));
+                const querySnapshot = await getDocs(q);
+
+                if (!querySnapshot.empty) {
+                    // Update existing report
+                    const existingReport = querySnapshot.docs[0];
+                    const reportRef = doc(db, `artifacts/${appId}/public/data/reports`, existingReport.id);
+                    await updateDoc(reportRef, {
+                        reporters: arrayUnion(currentUser.uid),
+                        allDescriptions: arrayUnion(description),
+                        allImages: imageUrl ? arrayUnion(imageUrl) : arrayUnion(),
+                        allAudioUrls: audioUrl ? arrayUnion(audioUrl) : arrayUnion(),
+                        allVideoUrls: videoUrl ? arrayUnion(videoUrl) : arrayUnion(),
+                    });
+                     showAlert('Your report has been added to an existing issue. Thank you for your contribution!');
+                } else {
+                    // Create a new report
+                    await addDoc(reportsRef, {
+                        streetName,
+                        status: 'pending',
+                        reporters: [currentUser.uid],
+                        allDescriptions: [description],
+                        allImages: imageUrl ? [imageUrl] : [],
+                        allAudioUrls: audioUrl ? [audioUrl] : [],
+                        allVideoUrls: videoUrl ? [videoUrl] : [],
+                        createdAt: serverTimestamp(),
+                        resolution: null,
+                        resolvedAt: null
+                    });
+                     showAlert('New issue reported successfully!');
+                }
+                
+                hideModal(newReportModal);
+                e.target.reset();
+
+            } catch (error) {
+                console.error("Error submitting report: ", error);
+                showAlert('Failed to submit report. Please try again.');
+            } finally {
+                loadingSpinner.style.display = 'none';
+            }
+        };
+        
+        const fetchNotices = () => {
+             const noticesRef = collection(db, `artifacts/${appId}/public/data/notices`);
+             onSnapshot(noticesRef, (snapshot) => {
+                 if(snapshot.empty) {
+                     noticeBoard.innerHTML = '<p class="text-sm">No new notices from officials.</p>';
+                     return;
+                 }
+                 let noticesHtml = '';
+                 snapshot.docs.forEach(doc => {
+                    const notice = doc.data();
+                    const createdAtDate = notice.createdAt?.toDate ? notice.createdAt.toDate() : new Date();
+                    noticesHtml += `
+                        <div class="border-l-4 border-saffron pl-3">
+                            <h4 class="font-semibold text-gray-800">${notice.title}</h4>
+                            <p class="text-sm">${notice.content}</p>
+                            <p class="text-xs text-gray-400 mt-1">${timeAgo(createdAtDate)}</p>
+                        </div>
+                    `;
+                 });
+                 noticeBoard.innerHTML = noticesHtml;
+             });
+        }
+
+        // --- Official Dashboard ---
+        const fetchAndDisplayOfficialReports = () => {
+            const reportsRef = collection(db, `artifacts/${appId}/public/data/reports`);
+            const q = query(reportsRef, where("status", "==", "pending"));
+
+            onSnapshot(q, (snapshot) => {
+                if (snapshot.empty) {
+                    officialReportsList.innerHTML = `<p class="text-center text-gray-500 py-10">No pending reports at the moment. Great job!</p>`;
+                    return;
+                }
+                let reportsHtml = '';
+                const pendingReports = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                pendingReports.sort((a,b) => (b.reporters?.length || 0) - (a.reporters?.length || 0)); // Sort by priority
+                
+                pendingReports.forEach(report => {
+                    reportsHtml += createReportCardHTML(report, true);
+                });
+                officialReportsList.innerHTML = reportsHtml;
+
+                // Add event listeners to new resolve buttons
+                document.querySelectorAll('.resolve-btn').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const reportId = btn.dataset.id;
+                        document.getElementById('resolve-report-id').value = reportId;
+                        showModal(resolveReportModal);
+                    });
+                });
+            });
+        };
+        
+        const handleResolveReport = async (e) => {
+            e.preventDefault();
+            loadingSpinner.style.display = 'flex';
+            
+            const reportId = e.target['resolve-report-id'].value;
+            const explanation = e.target['resolve-explanation'].value;
+            const imageUrl = e.target['resolve-image-url'].value;
+            
+            try {
+                const reportRef = doc(db, `artifacts/${appId}/public/data/reports`, reportId);
+                await updateDoc(reportRef, {
+                    status: 'resolved',
+                    resolvedAt: serverTimestamp(),
+                    resolution: {
+                        explanation: explanation,
+                        imageUrl: imageUrl,
+                        resolvedBy: currentUser.uid
+                    }
+                });
+                showAlert('Report has been successfully resolved!');
+                hideModal(resolveReportModal);
+                e.target.reset();
+            } catch(error) {
+                 console.error("Error resolving report: ", error);
+                 showAlert('Failed to resolve report. Please try again.');
+            } finally {
+                loadingSpinner.style.display = 'none';
+            }
+        };
+        
+        const handlePostNotice = async(e) => {
+             e.preventDefault();
+             if (document.body.dataset.mode === 'preview') {
+                showAlert("This is a preview. Posting notices is disabled.");
+                return;
+            }
+             loadingSpinner.style.display = 'flex';
+             const title = e.target['notice-title'].value;
+             const content = e.target['notice-content'].value;
+             
+             try {
+                const noticesRef = collection(db, `artifacts/${appId}/public/data/notices`);
+                await addDoc(noticesRef, {
+                    title,
+                    content,
+                    createdAt: serverTimestamp(),
+                    postedBy: currentUser.uid,
+                });
+                showAlert('Notice posted successfully!');
+                hideModal(postNoticeModal);
+                e.target.reset();
+             } catch(error) {
+                console.error("Error posting notice:", error);
+                showAlert('Failed to post notice. Please try again.');
+             } finally {
+                loadingSpinner.style.display = 'none';
+             }
+        };
+        
+        // --- MOCK DATA AND PREVIEW MODE ---
+        const mockReports = [
+            { id: 'mock1', streetName: 'Gandhi Road, Katpadi', status: 'pending', reporters: ['u1', 'u2', 'u3', 'u4', 'u5', 'u6'], allImages: ['https://images.pexels.com/photos/162557/pothole-road-water-build-up-162557.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1'], allDescriptions: ['Massive pothole causing traffic issues. Dangerous for two-wheelers especially at night.'], allAudioUrls: [], allVideoUrls: [], createdAt: new Date(new Date().setDate(new Date().getDate() - 3)), resolvedAt: null, resolution: null },
+            { id: 'mock2', streetName: 'Near Green Circle, VIT', status: 'pending', reporters: ['u7', 'u8', 'u9'], allImages: [], allDescriptions: ['Garbage bin is overflowing and the smell is unbearable. Listen to the sound of the flies buzzing around it.'], allAudioUrls: ['https://cdn.pixabay.com/download/audio/2022/03/15/audio_b6b47b4742.mp3'], allVideoUrls: [], createdAt: new Date(new Date().setDate(new Date().getDate() - 5)), resolvedAt: null, resolution: null },
+            { id: 'mock3', streetName: '4th Main Road, Sathuvachari', status: 'resolved', reporters: ['u10', 'u11'], allImages: [], allDescriptions: ['Streetlight here is not working, it just flickers constantly. See the video for proof.'], allAudioUrls: [], allVideoUrls: ['https://videos.pexels.com/video-files/3129955/3129955-sd_640_360_30fps.mp4'], createdAt: new Date(new Date().setDate(new Date().getDate() - 12)), resolvedAt: new Date(new Date().setDate(new Date().getDate() - 2)), resolution: { explanation: 'The faulty bulb and wiring were replaced by the municipal electrical team.', imageUrl: 'https://images.pexels.com/photos/1777813/pexels-photo-1777813.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' } },
+            { id: 'mock4', streetName: 'Anna Salai, Vellore Fort', status: 'pending', reporters: ['u12'], allImages: ['https://images.pexels.com/photos/1647919/pexels-photo-1647919.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1'], allDescriptions: ['The crosswalk paint has faded. A verbal report was also recorded explaining the danger to pedestrians.'], allAudioUrls: ['https://cdn.pixabay.com/download/audio/2021/08/04/audio_514b806f71.mp3'], allVideoUrls: [], createdAt: new Date(new Date().setDate(new Date().getDate() - 1)), resolvedAt: null, resolution: null },
+        ];
+
+        const mockNotices = [
+            { title: 'Waste Collection Change', content: 'For the North Zone, waste collection will now be on Tuesdays and Fridays.', createdAt: new Date(new Date().setDate(new Date().getDate() - 1)) },
+            { title: 'Road Closure: Gandhi Road', content: 'Gandhi Road will be closed for pothole repairs on Sep 16th from 9 AM to 5 PM.', createdAt: new Date(new Date().setDate(new Date().getDate() - 2)) }
+        ];
+
+        const loadMockDataForCivilian = () => {
+            document.body.dataset.mode = 'preview';
+            // Main feed
+            reportsFeed.innerHTML = mockReports.map(report => createReportCardHTML(report, false)).join('');
+            // My Reports (mocking that the guest user reported one)
+            myReportsList.innerHTML = createReportCardHTML(mockReports[1], false);
+            // Notices
+            noticeBoard.innerHTML = mockNotices.map(notice => {
+                const createdAtDate = notice.createdAt;
+                return `
+                    <div class="border-l-4 border-saffron pl-3">
+                        <h4 class="font-semibold text-gray-800">${notice.title}</h4>
+                        <p class="text-sm">${notice.content}</p>
+                        <p class="text-xs text-gray-400 mt-1">${timeAgo(createdAtDate)}</p>
+                    </div>
+                `;
+            }).join('');
+            showView(civilianDashboardView);
+        };
+        
+        const loadMockDataForOfficial = () => {
+             document.body.dataset.mode = 'preview';
+             const pendingReports = mockReports.filter(r => r.status === 'pending');
+             pendingReports.sort((a,b) => b.reporters.length - a.reporters.length);
+             officialReportsList.innerHTML = pendingReports.map(report => createReportCardHTML(report, true)).join('');
+             showView(officialDashboardView);
+        };
+
+        // --- App Initialization ---
+        const initAppForUser = async (user) => {
+            document.body.dataset.mode = 'live';
+            currentUser = user;
+            const userRef = doc(db, `artifacts/${appId}/users`, user.uid);
+            const userDoc = await getDoc(userRef);
+
+            if (userDoc.exists()) {
+                currentUserRole = userDoc.data().role;
+                if (currentUserRole === 'civilian') {
+                    // Setup civilian view
+                    profileEmail.textContent = user.email;
+                    profileUserId.textContent = user.uid;
+                    profileImpactScore.textContent = userDoc.data().impactScore || 0;
+                    fetchAndDisplayReports();
+                    fetchMyReports(user.uid);
+                    fetchNotices();
+                    showView(civilianDashboardView);
+                } else if (currentUserRole === 'official') {
+                    // Setup official view
+                    fetchAndDisplayOfficialReports();
+                    showView(officialDashboardView);
+                } else {
+                    console.error("Unknown user role:", currentUserRole);
+                    handleLogout();
+                }
+            } else {
+                console.log("User document doesn't exist, might be a new signup.");
+                handleLogout();
+            }
+            loadingSpinner.style.display = 'none';
+        };
+
+        const setupEventListeners = () => {
+            // Auth
+            authToggleLink.addEventListener('click', (e) => {
+              e.preventDefault();
+              toggleAuthMode();
+            });
+            document.getElementById('logout-btn-civilian').addEventListener('click', handleLogout);
+            document.getElementById('logout-btn-official').addEventListener('click', handleLogout);
+
+            // Preview Buttons
+            document.getElementById('preview-civilian').addEventListener('click', loadMockDataForCivilian);
+            document.getElementById('preview-official').addEventListener('click', loadMockDataForOfficial);
+
+            // Civilian Tabs
+            civilianTabs.forEach(tab => {
+                tab.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    civilianTabs.forEach(t => t.classList.remove('tab-active', 'text-gray-500', 'hover:text-gray-700'));
+                    e.target.classList.add('tab-active');
+                    civilianTabs.forEach(t => {
+                       if(!t.classList.contains('tab-active')) t.classList.add('text-gray-500', 'hover:text-gray-700');
+                    });
+                    
+                    civilianContentDashboard.classList.add('hidden');
+                    civilianContentMyReports.classList.add('hidden');
+                    civilianContentProfile.classList.add('hidden');
+
+                    if(e.target.id === 'tab-dashboard') civilianContentDashboard.classList.remove('hidden');
+                    if(e.target.id === 'tab-my-reports') civilianContentMyReports.classList.remove('hidden');
+                    if(e.target.id === 'tab-profile') civilianContentProfile.classList.remove('hidden');
+                });
+            });
+
+            // Modals
+            document.getElementById('new-report-btn').addEventListener('click', () => showModal(newReportModal));
+            document.getElementById('close-report-modal').addEventListener('click', () => hideModal(newReportModal));
+            document.getElementById('new-report-form').addEventListener('submit', handleNewReport);
+            
+            document.getElementById('close-resolve-modal').addEventListener('click', () => hideModal(resolveReportModal));
+            document.getElementById('resolve-report-form').addEventListener('submit', handleResolveReport);
+            
+            document.getElementById('post-notice-btn').addEventListener('click', () => showModal(postNoticeModal));
+            document.getElementById('close-notice-modal').addEventListener('click', () => hideModal(postNoticeModal));
+            document.getElementById('post-notice-form').addEventListener('submit', handlePostNotice);
+
+            document.getElementById('custom-alert-close').addEventListener('click', () => hideModal(customAlertModal));
+        };
+
+        // --- Main App Flow ---
+        window.onload = () => {
+            renderAuthForm();
+            setupEventListeners();
+            
+            onAuthStateChanged(auth, async (user) => {
+                if (user) {
+                    await initAppForUser(user);
+                } else {
+                     if (initialAuthToken) {
+                        try {
+                           await signInWithCustomToken(auth, initialAuthToken);
+                        } catch(e) {
+                           console.error("Custom token sign in failed:", e);
+                           showView(loginView);
+                           loadingSpinner.style.display = 'none';
+                        }
+                     } else {
+                       showView(loginView);
+                       loadingSpinner.style.display = 'none';
+                     }
+                }
+            });
+        };
+
+    </script>
+
+</body>
+</html>
